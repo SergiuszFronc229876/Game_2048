@@ -1,0 +1,3 @@
+C:/Users/xbxbc/CLionProjects/Gra_2048/cmake-build-debug/CMakeFiles/Gra_2048.dir
+C:/Users/xbxbc/CLionProjects/Gra_2048/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/xbxbc/CLionProjects/Gra_2048/cmake-build-debug/CMakeFiles/rebuild_cache.dir
