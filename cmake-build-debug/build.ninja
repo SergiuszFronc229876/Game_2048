@@ -49,8 +49,8 @@ cmake_ninja_workdir = C$:/Users/xbxbc/CLionProjects/Gra_2048/cmake-build-debug/
 
 build cmake_object_order_depends_target_Gra_2048: phony || CMakeFiles/Gra_2048.dir
 
-build CMakeFiles/Gra_2048.dir/main.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/xbxbc/CLionProjects/Gra_2048/main.c || cmake_object_order_depends_target_Gra_2048
-  DEP_FILE = CMakeFiles\Gra_2048.dir\main.c.obj.d
+build CMakeFiles/Gra_2048.dir/main-terminal.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/xbxbc/CLionProjects/Gra_2048/main-terminal.c || cmake_object_order_depends_target_Gra_2048
+  DEP_FILE = CMakeFiles\Gra_2048.dir\main-terminal.c.obj.d
   FLAGS = -g -fdiagnostics-color=always -std=gnu11
   OBJECT_DIR = CMakeFiles\Gra_2048.dir
   OBJECT_FILE_DIR = CMakeFiles\Gra_2048.dir
@@ -65,6 +65,22 @@ build CMakeFiles/Gra_2048.dir/game.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/x
   TARGET_COMPILE_PDB = CMakeFiles\Gra_2048.dir\
   TARGET_PDB = Gra_2048.pdb
 
+build CMakeFiles/Gra_2048.dir/oled_game.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/xbxbc/CLionProjects/Gra_2048/oled_game.c || cmake_object_order_depends_target_Gra_2048
+  DEP_FILE = CMakeFiles\Gra_2048.dir\oled_game.c.obj.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles\Gra_2048.dir
+  OBJECT_FILE_DIR = CMakeFiles\Gra_2048.dir
+  TARGET_COMPILE_PDB = CMakeFiles\Gra_2048.dir\
+  TARGET_PDB = Gra_2048.pdb
+
+build CMakeFiles/Gra_2048.dir/main.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/xbxbc/CLionProjects/Gra_2048/main.c || cmake_object_order_depends_target_Gra_2048
+  DEP_FILE = CMakeFiles\Gra_2048.dir\main.c.obj.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles\Gra_2048.dir
+  OBJECT_FILE_DIR = CMakeFiles\Gra_2048.dir
+  TARGET_COMPILE_PDB = CMakeFiles\Gra_2048.dir\
+  TARGET_PDB = Gra_2048.pdb
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target Gra_2048
@@ -73,7 +89,7 @@ build CMakeFiles/Gra_2048.dir/game.c.obj: C_COMPILER__Gra_2048_Debug C$:/Users/x
 #############################################
 # Link the executable Gra_2048.exe
 
-build Gra_2048.exe: C_EXECUTABLE_LINKER__Gra_2048_Debug CMakeFiles/Gra_2048.dir/main.c.obj CMakeFiles/Gra_2048.dir/game.c.obj
+build Gra_2048.exe: C_EXECUTABLE_LINKER__Gra_2048_Debug CMakeFiles/Gra_2048.dir/main-terminal.c.obj CMakeFiles/Gra_2048.dir/game.c.obj CMakeFiles/Gra_2048.dir/oled_game.c.obj CMakeFiles/Gra_2048.dir/main.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\Gra_2048.dir
