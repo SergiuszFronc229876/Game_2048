@@ -7,8 +7,8 @@
 #define ROWS 4
 #define COLS 4
 
-void draw_board(struct Game *game) {
-    system("cls"); // Wyczyszczenie konsoli
+void print_board(struct Game *game) {
+    system("cls"); // Clear the console
     printf("Score: %d\n\n", game->score);
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -20,37 +20,37 @@ void draw_board(struct Game *game) {
 
 int main() {
     srand(time(NULL));
-    struct Game game = {0};
-    spawn_number(&game);
-    spawn_number(&game);
-    draw_board(&game);
+
+    struct Game game;
+    init_game(&game);
+
     while (1) {
-        char ch = getch();
-        switch (ch) {
+        print_board(&game);
+        if (game_over(&game)) {
+            printf("Game over! Final score: %d\n", game.score);
+            break;
+        }
+        int move = getch();
+        int moved;
+        switch (move) {
             case 'w':
-            case 'W':
-                move_up(&game);
+                moved = move_up(&game);
                 break;
             case 's':
-            case 'S':
-                move_down(&game);
+                moved = move_down(&game);
                 break;
             case 'a':
-            case 'A':
-                move_left(&game);
+                moved = move_left(&game);
                 break;
             case 'd':
-            case 'D':
-                move_right(&game);
+                moved = move_right(&game);
                 break;
-            case 'q':
-            case 'Q':
-                exit(0);
             default:
                 continue;
         }
-        spawn_number(&game);
-        draw_board(&game);
+        if (moved) {
+            spawn_number(&game);
+        }
     }
     return 0;
 }

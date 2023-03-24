@@ -9,11 +9,18 @@ struct Game {
     int score;
 };
 
-void spawn_number(struct Game *game);
-void draw_board(struct Game *game);
-void move_up(struct Game *game);
-void move_down(struct Game *game);
-void move_left(struct Game *game);
-void move_right(struct Game *game);
+void init_game(struct Game *game);
 
-#endif /* GAME_H */
+void spawn_number(struct Game *game);
+
+int move_up(struct Game *game);
+
+int move_down(struct Game *game);
+
+int move_left(struct Game *game);
+
+int move_right(struct Game *game);
+
+int game_over(struct Game *game);
+
+#endif
