@@ -1,5 +1,5 @@
-#ifndef GRA_2048_OLED_GAME_H
-#define GRA_2048_OLED_GAME_H
+#ifndef GRA_2048_GAME_OLED_CONTROLLER_H
+#define GRA_2048_GAME_OLED_CONTROLLER_H
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -7,6 +7,6 @@ add_executable(Gra_2048
         main.c
         game.h
         game.c
-        oled_game.h
-        oled_game.c
+        game_oled_controller.h
+        game_oled_controller.c
         )

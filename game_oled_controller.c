@@ -1,4 +1,4 @@
-#include "oled_game.h"
+#include "game_oled_controller.h"
 
 /*
  * Draw empty board, only lines

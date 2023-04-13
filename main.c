@@ -13,7 +13,7 @@
 #include "oled.h"
 
 #include "game.h"
-#include "oled_game.h"
+#include "game_oled_controller.h"
 
 
 #define NOTE_PIN_HIGH() GPIO_SetValue(0, 1<<26);
@@ -185,13 +185,13 @@ static uint32_t getPause(uint8_t ch) {
     }
 }
 
-static void playSong(uint8_t *song) {
+static void playSound(uint8_t *song) {
     uint32_t note = 0;
     uint32_t dur = 0;
     uint32_t pause = 0;
 
     /*
-     * A song is a collection of tones where each tone is
+     * A moveSound is a collection of tones where each tone is
      * a note, duration and pause, e.g.
      *
      * "E2,F4,"
@@ -212,7 +212,7 @@ static void playSong(uint8_t *song) {
     }
 }
 
-static uint8_t *song = (uint8_t *) "A1_";
+static uint8_t *moveSound = (uint8_t *) "A1_";
 // ##########################################
 
 int main(void) {
@@ -286,14 +286,16 @@ int main(void) {
         joystickState = joystick_read();
 
         if (moved == 0) {
+            // When user moved joystick
             if (joystickState != 0) {
-                moved = game_move(joystickState, board);
+                moved = game_move(joystickState, &game);
                 if (moved == 1) {
-                    drawOled(board);
-                    playSong(song);
+                    drawOled(game.board);
+                    playSound(moveSound);
                 }
             }
         }
+        // When user let go joystick
         if (joystickState == 0) {
             moved = 0;
         }
@@ -310,6 +312,7 @@ int main(void) {
         }
         if (sw3 == 0 && sw3_pressed == 0) {
             sw3_pressed = 1;
+            // Restart the game
             oled_clearScreen(OLED_COLOR_BLACK);
             init_game(&game);
             draw_board(game.board);
