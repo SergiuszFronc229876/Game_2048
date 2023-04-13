@@ -33,7 +33,6 @@ void draw_all_tiles(int board[ROWS][COLS]) {
 				new_frame[x][y] = 1;
 			}
 			new_frame[BOARD_PIXEL_SIZE_X][y] = 1;
-
 		}
 	}
 	for (int x = 0; x <= BOARD_PIXEL_SIZE_X; ++x) {
@@ -43,9 +42,10 @@ void draw_all_tiles(int board[ROWS][COLS]) {
 	// Set digit pixel positions to new_frame
     for (int i = 0; i < ROWS; ++i) {
         for (int j = 0; j < COLS; ++j) {
-            draw_tile(board[i][j], (i * 18) + 2, (j * 8) + 2);
+            draw_tile(board[j][i], (i * 18) + 2, (j * 8) + 2);
         }
     }
+    printf("\n");
 
     // Compare changes in cur_frame and new_frame and draw pixels on OLED screen
 	for (int y = 0; y < BOARD_PIXEL_SIZE_Y; ++y) {

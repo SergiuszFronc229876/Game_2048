@@ -100,11 +100,14 @@ static int game_move(uint8_t joyState, struct Game *game) {
     if ((joyState & JOYSTICK_RIGHT) != 0) {
         moved = move_right(game);
     }
+    if (moved == 1) {
+    	spawn_number(game);
+    }
     return moved;
 }
 
-static void drawOled(int board[][BOARD_SIDE_SIZE]) {
-    drawTilesOnBoard(board);
+static void drawOled(int board[ROWS][COLS]) {
+	draw_all_tiles(board);
 }
 
 // ##########################################
@@ -324,7 +327,7 @@ int main(void) {
         /* ####### Accelerometer ###### */
         /* # */
         acc_read(&x, &y, &z);
-        printf("x: %d | y: %d | z: %d\n", x + xoff, y + yoff, z + zoff);
+        // printf("x: %d | y: %d | z: %d\n", x + xoff, y + yoff, z + zoff);
         /* # */
         /* ############################# */
 

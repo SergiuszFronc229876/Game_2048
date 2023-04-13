@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "game.h"
+#include "oled.h"
 
-#define BOARD_PIXEL_SIZE_X COLS * (4 * 3 + 3 + 3)
-#define BOARD_PIXEL_SIZE_Y ROWS * (5 + 3)
+#define BOARD_PIXEL_SIZE_X COLS * (4 * 3 + 3 + 3) + 1
+#define BOARD_PIXEL_SIZE_Y ROWS * (5 + 3) + 1
 
 int cur_frame[BOARD_PIXEL_SIZE_X][BOARD_PIXEL_SIZE_Y];
 int new_frame[BOARD_PIXEL_SIZE_X][BOARD_PIXEL_SIZE_Y];
