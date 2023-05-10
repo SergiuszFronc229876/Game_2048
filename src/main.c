@@ -1,5 +1,7 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "stdio.h"
 
 #include "lpc17xx_pinsel.h"
@@ -75,7 +77,12 @@ static void init_ssp(void) {
 
 }
 
-static int game_move(uint8_t joyState, struct Game *game) {
+
+static void drawOled(int board[ROWS][COLS]) {
+	draw_all_tiles(board);
+}
+
+static int joystick_game_move(uint8_t joyState, struct Game *game) {
     static int wait = 0;
     int moved = 0;
 
@@ -104,10 +111,6 @@ static int game_move(uint8_t joyState, struct Game *game) {
     	spawn_number(game);
     }
     return moved;
-}
-
-static void drawOled(int board[ROWS][COLS]) {
-	draw_all_tiles(board);
 }
 
 // ##########################################
@@ -291,7 +294,7 @@ int main(void) {
         if (moved == 0) {
             // When user moved joystick
             if (joystickState != 0) {
-                moved = game_move(joystickState, &game);
+                moved = joystick_game_move(joystickState, &game);
                 if (moved == 1) {
                     drawOled(game.board);
                     playSound(moveSound);
@@ -318,6 +321,7 @@ int main(void) {
             // Restart the game
             oled_clearScreen(OLED_COLOR_BLACK);
             init_game(&game);
+            draw_empty_board();
             draw_board(game.board);
         }
         /* # */
@@ -327,7 +331,56 @@ int main(void) {
         /* ####### Accelerometer ###### */
         /* # */
         acc_read(&x, &y, &z);
-        // printf("x: %d | y: %d | z: %d\n", x + xoff, y + yoff, z + zoff);
+//        printf("x: %d | y: %d | z: %d\n", x + xoff, y + yoff, z + zoff);
+
+        bool acc_moved;
+
+        if (
+        		((x + xoff > 240 && x + xoff <= 255) || (x + xoff < 10 && x + xoff >= 0)) &&
+        		((y + yoff > 240 && x + xoff <= 255) || (y + yoff < 10 && x + xoff >= 0)) &&
+				(z + zoff > 310 && z + zoff < 330)) {
+			if (acc_moved == true) {
+				acc_moved = false;
+			}
+        }
+
+        // LEFT
+        if ((x + xoff > 30 && x + xoff < 66) && acc_moved == false) {
+        	if (move_left(&game) == 1) {
+        		acc_moved = true;
+        		spawn_number(&game);
+        		drawOled(game.board);
+        		playSound(moveSound);
+        	}
+        }
+        // RIGHT
+        if ((x + xoff < 220 && x + xoff > 191) && acc_moved == false) {
+        	if (move_right(&game) == 1) {
+        		acc_moved = true;
+        		spawn_number(&game);
+        		drawOled(game.board);
+        		playSound(moveSound);
+        	}
+		}
+        // UP
+        if ((y + yoff > 195 && y + yoff < 225) && acc_moved == false) {
+        	if (move_up(&game) == 1) {
+        		acc_moved = true;
+        		spawn_number(&game);
+        		drawOled(game.board);
+        		playSound(moveSound);
+        	}
+		}
+        // DOWN
+        if ((y + yoff > 30 && y + yoff < 66) && acc_moved == false) {
+        	if (move_down(&game) == 1) {
+        		acc_moved = true;
+        		spawn_number(&game);
+        		drawOled(game.board);
+        		playSound(moveSound);
+        	}
+        }
+
         /* # */
         /* ############################# */
 
