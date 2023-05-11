@@ -1,3 +1,4 @@
 .idea
 cmake-build-*
 Debug
+game_2048 LinkServer Debug.launch
