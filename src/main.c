@@ -1,8 +1,11 @@
+#include <inttypes.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include "stdio.h"
+#include "pca9532.h"
 
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_gpio.h"
@@ -10,6 +13,7 @@
 #include "lpc17xx_ssp.h"
 #include "lpc17xx_adc.h"
 #include "lpc17xx_timer.h"
+#include "lpc17xx_clkpwr.h"
 
 #include "joystick.h"
 #include "oled.h"
@@ -17,6 +21,7 @@
 #include "game.h"
 #include "game_oled_controller.h"
 
+#include "eeprom.h"
 
 #define NOTE_PIN_HIGH() GPIO_SetValue(0, 1<<26);
 #define NOTE_PIN_LOW()  GPIO_ClearValue(0, 1<<26);
@@ -77,9 +82,10 @@ static void init_ssp(void) {
 
 }
 
-
+int flag_led = 0;
 static void drawOled(int board[ROWS][COLS]) {
 	draw_all_tiles(board);
+	flag_led=1;
 }
 
 static int joystick_game_move(uint8_t joyState, struct Game *game) {
@@ -221,7 +227,56 @@ static void playSound(uint8_t *song) {
 static uint8_t *moveSound = (uint8_t *) "A1_";
 // ##########################################
 
+static uint32_t msTicks = 0;
+void SysTick_Handler(void) {
+    msTicks++;
+}
+
+static uint32_t getTicks(void) {
+    return msTicks;
+}
+
+
+uint16_t ledOn = 0;
+uint16_t ledOff = 0;
+
+int cnt = -1;
+uint32_t led_time;
+void oledsss(){
+
+	if (flag_led == 1) {
+		if (cnt == -1) {
+			led_time = getTicks();
+			cnt = 0;
+		}
+		if (getTicks() - led_time >= 1) {
+			led_time = getTicks();
+
+	        if (cnt < 16)
+	            ledOn |= (1 << cnt);
+	        if (cnt > 15)
+	            ledOn &= ~( 1 << (cnt - 16) );
+
+	        if (cnt > 15)
+	            ledOff |= ( 1 << (cnt - 16) );
+	        if (cnt < 16)
+	            ledOff &= ~(1 << cnt);
+
+			pca9532_setLeds(ledOn, ledOff);
+
+			cnt++;
+			if (cnt == 32) {
+				flag_led = 0;
+				cnt = -1;
+			}
+		}
+	}
+}
+
 int main(void) {
+	if (SysTick_Config(SystemCoreClock / 1000)) {
+		while (1);  // Capture error
+	}
 
     /* ####### Button ###### */
     /* # */
@@ -230,6 +285,7 @@ int main(void) {
     /* # */
     /* ##################### */
 
+    pca9532_init();
 
     /* ####### Accelerometer ###### */
     /* # */
@@ -287,6 +343,8 @@ int main(void) {
 
     int moved = 0;
     while (1) {
+    	oledsss();
+
         /* ####### Joystick and OLED ###### */
         /* # */
         joystickState = joystick_read();
