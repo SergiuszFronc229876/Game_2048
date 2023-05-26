@@ -1,11 +1,8 @@
-#include <inttypes.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include "stdio.h"
-#include "pca9532.h"
 
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_gpio.h"
@@ -17,11 +14,10 @@
 
 #include "joystick.h"
 #include "oled.h"
+#include "pca9532.h"
 
 #include "game.h"
 #include "game_oled_controller.h"
-
-#include "eeprom.h"
 
 #define NOTE_PIN_HIGH() GPIO_SetValue(0, 1<<26);
 #define NOTE_PIN_LOW()  GPIO_ClearValue(0, 1<<26);
@@ -83,9 +79,9 @@ static void init_ssp(void) {
 }
 
 int flag_led = 0;
-static void drawOled(int board[ROWS][COLS]) {
+static void make_game_move(int board[ROWS][COLS]) {
 	draw_all_tiles(board);
-	flag_led=1;
+	flag_led = 1;
 }
 
 static int joystick_game_move(uint8_t joyState, struct Game *game) {
@@ -236,38 +232,35 @@ static uint32_t getTicks(void) {
     return msTicks;
 }
 
-
 uint16_t ledOn = 0;
 uint16_t ledOff = 0;
-
-int cnt = -1;
-uint32_t led_time;
-void oledsss(){
-
+int cnt = 0;
+uint32_t last_led_tick;
+void controll_leds() {
 	if (flag_led == 1) {
-		if (cnt == -1) {
-			led_time = getTicks();
-			cnt = 0;
+		if (cnt == 0) {
+			last_led_tick = getTicks();
+			cnt = 1;
 		}
-		if (getTicks() - led_time >= 1) {
-			led_time = getTicks();
-
-	        if (cnt < 16)
+		if (getTicks() - last_led_tick >= 1) {
+			last_led_tick = getTicks();
+	        
+			if (cnt < 8) {
 	            ledOn |= (1 << cnt);
-	        if (cnt > 15)
-	            ledOn &= ~( 1 << (cnt - 16) );
-
-	        if (cnt > 15)
-	            ledOff |= ( 1 << (cnt - 16) );
-	        if (cnt < 16)
-	            ledOff &= ~(1 << cnt);
-
+				ledOn |= (1 << cnt + 16);
+			}
+	        else if (cnt >= 8) {
+	            ledOff &= ~(1 << (15 - cnt));
+				ledOff &= ~(1 << (23 - cnt));
+			}
 			pca9532_setLeds(ledOn, ledOff);
 
 			cnt++;
-			if (cnt == 32) {
+			if (cnt == 16) {
 				flag_led = 0;
-				cnt = -1;
+				cnt = 0;
+				ledOn = 0;
+				ledOff = 0;
 			}
 		}
 	}
@@ -343,8 +336,6 @@ int main(void) {
 
     int moved = 0;
     while (1) {
-    	oledsss();
-
         /* ####### Joystick and OLED ###### */
         /* # */
         joystickState = joystick_read();
@@ -354,7 +345,7 @@ int main(void) {
             if (joystickState != 0) {
                 moved = joystick_game_move(joystickState, &game);
                 if (moved == 1) {
-                    drawOled(game.board);
+                    make_game_move(game.board);
                     playSound(moveSound);
                 }
             }
@@ -407,7 +398,7 @@ int main(void) {
         	if (move_left(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
         }
@@ -416,7 +407,7 @@ int main(void) {
         	if (move_right(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
 		}
@@ -425,7 +416,7 @@ int main(void) {
         	if (move_up(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
 		}
@@ -434,13 +425,15 @@ int main(void) {
         	if (move_down(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
         }
 
         /* # */
         /* ############################# */
+
+		controll_leds();
 
         Timer0_Wait(10);
     }
