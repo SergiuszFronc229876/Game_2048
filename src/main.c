@@ -81,7 +81,7 @@ static void init_ssp(void) {
 int flag_led = 0;
 static void make_game_move(int board[ROWS][COLS]) {
 	draw_all_tiles(board);
-	flag_led=1;
+	flag_led = 1;
 }
 
 static int joystick_game_move(uint8_t joyState, struct Game *game) {
@@ -232,10 +232,8 @@ static uint32_t getTicks(void) {
     return msTicks;
 }
 
-
 uint16_t ledOn = 0;
 uint16_t ledOff = 0;
-
 int cnt = -1;
 uint32_t led_time;
 
