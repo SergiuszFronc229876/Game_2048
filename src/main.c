@@ -1,11 +1,8 @@
-#include <inttypes.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include "stdio.h"
-#include "pca9532.h"
 
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_gpio.h"
@@ -17,11 +14,10 @@
 
 #include "joystick.h"
 #include "oled.h"
+#include "pca9532.h"
 
 #include "game.h"
 #include "game_oled_controller.h"
-
-#include "eeprom.h"
 
 #define NOTE_PIN_HIGH() GPIO_SetValue(0, 1<<26);
 #define NOTE_PIN_LOW()  GPIO_ClearValue(0, 1<<26);
@@ -83,7 +79,7 @@ static void init_ssp(void) {
 }
 
 int flag_led = 0;
-static void drawOled(int board[ROWS][COLS]) {
+static void make_game_move(int board[ROWS][COLS]) {
 	draw_all_tiles(board);
 	flag_led=1;
 }
@@ -242,35 +238,37 @@ uint16_t ledOff = 0;
 
 int cnt = -1;
 uint32_t led_time;
-void oledsss(){
 
-	if (flag_led == 1) {
-		if (cnt == -1) {
-			led_time = getTicks();
-			cnt = 0;
-		}
-		if (getTicks() - led_time >= 1) {
-			led_time = getTicks();
+void control_leds() {
+    if (flag_led == 1) {
+        if (cnt == -1) {
+            led_time = getTicks();
+            cnt = 0;
+            ledOn = 0;
+            ledOff = 0;
+        }
+        if (getTicks() - led_time >= 1) {
+            led_time = getTicks();
 
-	        if (cnt < 16)
-	            ledOn |= (1 << cnt);
-	        if (cnt > 15)
-	            ledOn &= ~( 1 << (cnt - 16) );
+            if (cnt < 8) {
+                ledOn |= (1 << cnt);
+                ledOff &= ~(1 << cnt);
+            } else if (cnt >= 8 && cnt < 16) {
+                ledOn &= ~(1 << (cnt - 8));
+                ledOff |= (1 << (cnt - 8));
+            }
 
-	        if (cnt > 15)
-	            ledOff |= ( 1 << (cnt - 16) );
-	        if (cnt < 16)
-	            ledOff &= ~(1 << cnt);
+            pca9532_setLeds(ledOn, ledOff);
 
-			pca9532_setLeds(ledOn, ledOff);
-
-			cnt++;
-			if (cnt == 32) {
-				flag_led = 0;
-				cnt = -1;
-			}
-		}
-	}
+            cnt++;
+            if (cnt == 16) {
+                flag_led = 0;
+                cnt = -1;
+                ledOn = 0;
+                ledOff = 0;
+            }
+        }
+    }
 }
 
 int main(void) {
@@ -343,8 +341,6 @@ int main(void) {
 
     int moved = 0;
     while (1) {
-    	oledsss();
-
         /* ####### Joystick and OLED ###### */
         /* # */
         joystickState = joystick_read();
@@ -354,7 +350,7 @@ int main(void) {
             if (joystickState != 0) {
                 moved = joystick_game_move(joystickState, &game);
                 if (moved == 1) {
-                    drawOled(game.board);
+                	make_game_move(game.board);
                     playSound(moveSound);
                 }
             }
@@ -407,7 +403,7 @@ int main(void) {
         	if (move_left(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
         }
@@ -416,7 +412,7 @@ int main(void) {
         	if (move_right(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
 		}
@@ -425,7 +421,7 @@ int main(void) {
         	if (move_up(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
 		}
@@ -434,13 +430,15 @@ int main(void) {
         	if (move_down(&game) == 1) {
         		acc_moved = true;
         		spawn_number(&game);
-        		drawOled(game.board);
+        		make_game_move(game.board);
         		playSound(moveSound);
         	}
         }
 
         /* # */
         /* ############################# */
+
+        control_leds();
 
         Timer0_Wait(10);
     }
