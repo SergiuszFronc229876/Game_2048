@@ -16,10 +16,6 @@ void draw_empty_board();
 
 void draw_board(int board[ROWS][COLS]);
 
-void draw_tile(int tileValue, int x, int y);
-
-void draw_digit(int digit, int x, int y);
-
 static int zero[5][3] = {
         {1, 1, 1},
         {1, 0, 1},

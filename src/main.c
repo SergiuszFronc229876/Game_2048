@@ -15,15 +15,13 @@
 #include "joystick.h"
 #include "oled.h"
 #include "pca9532.h"
+#include "led7seg.h"
+#include "acc.h"
 
 #include "game.h"
 #include "game_oled_controller.h"
 
-#define NOTE_PIN_HIGH() GPIO_SetValue(0, 1<<26);
-#define NOTE_PIN_LOW()  GPIO_ClearValue(0, 1<<26);
-
 // ####################################################
-
 static void init_i2c(void) {
     PINSEL_CFG_Type PinCfg;
 
@@ -76,12 +74,6 @@ static void init_ssp(void) {
     // Enable SSP peripheral
     SSP_Cmd(LPC_SSP1, ENABLE);
 
-}
-
-int flag_led = 0;
-static void make_game_move(int board[ROWS][COLS]) {
-	draw_all_tiles(board);
-	flag_led = 1;
 }
 
 static int joystick_game_move(uint8_t joyState, struct Game *game) {
@@ -232,12 +224,12 @@ static uint32_t getTicks(void) {
     return msTicks;
 }
 
-uint16_t ledOn = 0;
-uint16_t ledOff = 0;
-int cnt = -1;
-uint32_t led_time;
-
-void control_leds() {
+static uint16_t ledOn = 0;
+static uint16_t ledOff = 0;
+static int flag_led = 0;
+static int cnt = -1;
+static uint32_t led_time;
+static void control_leds() {
     if (flag_led == 1) {
         if (cnt == -1) {
             led_time = getTicks();
@@ -269,22 +261,57 @@ void control_leds() {
     }
 }
 
+static char ch7segValue = '9';
+static uint32_t ch7segTime = 0;
+static bool update7seg() {
+	if (getTicks() - ch7segTime >= 1000) {
+		ch7segTime = getTicks();
+		ch7segValue--;
+		led7seg_setChar(ch7segValue, FALSE);
+		if (ch7segValue <= '0') {
+			ch7segValue = '9';
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void make_game_move(int board[ROWS][COLS]) {
+	draw_board(board);
+	playSound(moveSound);
+	flag_led = 1;
+
+	ch7segTime = getTicks();
+	ch7segValue = '9';
+	led7seg_setChar(ch7segValue, FALSE);
+}
+
+static void restart_game(struct Game *game) {
+	oled_clearScreen(OLED_COLOR_BLACK);
+	init_game(game);
+	draw_empty_board();
+	draw_board(game->board);
+
+	ch7segTime = getTicks();
+	ch7segValue = '9';
+	led7seg_setChar(ch7segValue, FALSE);
+}
+
 int main(void) {
+	// SYSTICKS
 	if (SysTick_Config(SystemCoreClock / 1000)) {
 		while (1);  // Capture error
 	}
 
-    /* ####### Button ###### */
-    /* # */
+    // BUTTON
     uint8_t sw3 = 0;
     uint8_t sw3_pressed;
-    /* # */
-    /* ##################### */
 
-    pca9532_init();
+    // SSP I2C
+    init_ssp();
+    init_i2c();
 
     /* ####### Accelerometer ###### */
-    /* # */
     uint8_t xoff = 0;
     uint8_t yoff = 0;
     uint8_t zoff = 0;
@@ -293,20 +320,15 @@ int main(void) {
     uint8_t y = 0;
     uint8_t z = 0;
 
-    init_ssp();
-    init_i2c();
     acc_init();
 
     acc_read(&x, &y, &z);
     xoff = 0 - x;
     yoff = 0 - y;
     zoff = 64 - z;
-    /* # */
     /* ############################ */
 
-
     /* ####### Speaker ####### */
-    /* # */
     GPIO_SetDir(2, 1 << 0, 1);
     GPIO_SetDir(2, 1 << 1, 1);
 
@@ -318,26 +340,29 @@ int main(void) {
     GPIO_ClearValue(0, 1 << 27); //LM4811-clk
     GPIO_ClearValue(0, 1 << 28); //LM4811-up/dn
     GPIO_ClearValue(2, 1 << 13); //LM4811-shutdn
-    /* # */
     /* ####################### */
 
+    // LEDS
+    pca9532_init();
 
-    /* ####### Joystick and OLED ###### */
-    /* # */
-    uint8_t joystickState = 0;
-
+    // OLED
     oled_init();
-    joystick_init();
-
     oled_clearScreen(OLED_COLOR_BLACK);
 
+    // JOYSTICk
+    uint8_t joystickState = 0;
+    joystick_init();
+
+    // LED 7 SEG
+    led7seg_init();
+    led7seg_setChar('9', FALSE);
+
+    // INIT GAME
     struct Game game;
     init_game(&game);
     draw_board(game.board);
-    /* # */
-    /* ################################ */
-
     int moved = 0;
+
     while (1) {
         /* ####### Joystick and OLED ###### */
         /* # */
@@ -349,7 +374,6 @@ int main(void) {
                 moved = joystick_game_move(joystickState, &game);
                 if (moved == 1) {
                 	make_game_move(game.board);
-                    playSound(moveSound);
                 }
             }
         }
@@ -361,8 +385,7 @@ int main(void) {
         /* ################################ */
 
 
-        /* ####### Button ###### */
-        /* # */
+        /* ####### BUTTON ###### */
         sw3 = ((GPIO_ReadValue(0) >> 4) & 0x01);
 
         if (sw3 != 0) {
@@ -370,20 +393,13 @@ int main(void) {
         }
         if (sw3 == 0 && sw3_pressed == 0) {
             sw3_pressed = 1;
-            // Restart the game
-            oled_clearScreen(OLED_COLOR_BLACK);
-            init_game(&game);
-            draw_empty_board();
-            draw_board(game.board);
+            restart_game(&game);
         }
-        /* # */
         /* ###################### */
 
 
-        /* ####### Accelerometer ###### */
-        /* # */
+        /* ####### ACCELEROMETR ###### */
         acc_read(&x, &y, &z);
-//        printf("x: %d | y: %d | z: %d\n", x + xoff, y + yoff, z + zoff);
 
         bool acc_moved;
 
@@ -402,7 +418,6 @@ int main(void) {
         		acc_moved = true;
         		spawn_number(&game);
         		make_game_move(game.board);
-        		playSound(moveSound);
         	}
         }
         // RIGHT
@@ -411,7 +426,6 @@ int main(void) {
         		acc_moved = true;
         		spawn_number(&game);
         		make_game_move(game.board);
-        		playSound(moveSound);
         	}
 		}
         // UP
@@ -420,7 +434,6 @@ int main(void) {
         		acc_moved = true;
         		spawn_number(&game);
         		make_game_move(game.board);
-        		playSound(moveSound);
         	}
 		}
         // DOWN
@@ -429,14 +442,14 @@ int main(void) {
         		acc_moved = true;
         		spawn_number(&game);
         		make_game_move(game.board);
-        		playSound(moveSound);
         	}
         }
-
-        /* # */
         /* ############################# */
 
         control_leds();
+        if (update7seg()) {
+        	 restart_game(&game);
+        }
 
         Timer0_Wait(10);
     }
