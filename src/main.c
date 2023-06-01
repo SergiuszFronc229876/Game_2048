@@ -17,6 +17,9 @@
 #include "pca9532.h"
 #include "led7seg.h"
 #include "acc.h"
+#include "eeprom.h"
+#define E_WRITE_LEN 200
+#define UART_DEV LPC_UART3
 
 #include "game.h"
 #include "game_oled_controller.h"
@@ -357,9 +360,37 @@ int main(void) {
     led7seg_init();
     led7seg_setChar('9', FALSE);
 
+    // EEPROM
+    int16_t len = 0;
+    uint8_t a[E_WRITE_LEN];
+    for(int i=0;i<16;++i){
+    	a[i] = i;
+    }
+    eeprom_init();
+    len = eeprom_write(a, 0, E_WRITE_LEN);
+    if (len != E_WRITE_LEN) {
+    	printf("EEPROM: Failed to write data\r\n");
+        return 1;
+    }
+
+    uint8_t b[E_WRITE_LEN];
+    len = eeprom_read(b, 0, E_WRITE_LEN);
+    if (len != E_WRITE_LEN) {
+    	printf("EEPROM: Failed to read all data\r\n");
+        return 1;
+    }
+
     // INIT GAME
     struct Game game;
-    init_game(&game);
+
+    for(int i=0;i<4;++i){
+    	for(int j=0;j<4;++j){
+    		game.board[i][j] = b[i*4+j];
+    	}
+    }
+
+
+//    init_game(&game);
     draw_board(game.board);
     int moved = 0;
 
