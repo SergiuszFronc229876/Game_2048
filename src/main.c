@@ -18,7 +18,7 @@
 #include "led7seg.h"
 #include "acc.h"
 #include "eeprom.h"
-#define E_WRITE_LEN 200
+#define E_WRITE_LEN 17
 #define UART_DEV LPC_UART3
 
 #include "game.h"
@@ -309,6 +309,7 @@ int main(void) {
     // BUTTON
     uint8_t sw3 = 0;
     uint8_t sw3_pressed;
+    uint32_t sw3_pressed_time;
 
     // SSP I2C
     init_ssp();
@@ -361,36 +362,31 @@ int main(void) {
     led7seg_setChar('9', FALSE);
 
     // EEPROM
-    int16_t len = 0;
-    uint8_t a[E_WRITE_LEN];
-    for(int i=0;i<16;++i){
-    	a[i] = i;
-    }
     eeprom_init();
-    len = eeprom_write(a, 0, E_WRITE_LEN);
-    if (len != E_WRITE_LEN) {
-    	printf("EEPROM: Failed to write data\r\n");
-        return 1;
-    }
-
-    uint8_t b[E_WRITE_LEN];
-    len = eeprom_read(b, 0, E_WRITE_LEN);
-    if (len != E_WRITE_LEN) {
-    	printf("EEPROM: Failed to read all data\r\n");
-        return 1;
-    }
+    int16_t len = 0;
 
     // INIT GAME
     struct Game game;
 
-    for(int i=0;i<4;++i){
-    	for(int j=0;j<4;++j){
-    		game.board[i][j] = b[i*4+j];
-    	}
+    // Load saved game save from eeprom
+    uint8_t saved_game_data[E_WRITE_LEN];
+    len = eeprom_read(saved_game_data, 0, E_WRITE_LEN);
+    if (len == E_WRITE_LEN) {
+    	// If the first integer from loaded data has specific value 0b10101010
+		// it means that we're sure that loaded data is correct 2048 game save
+    	if (saved_game_data[16] == 0b10101010) {
+    		for(int i = 0; i < 4; ++i) {
+    			for(int j = 0; j < 4; ++j) {
+    				game.board[i][j] = saved_game_data[i*4+j];
+    			}
+			}
+		}
+    }
+    // if not, there's no saved game in eeprom and new game should be initialized
+    else {
+    	init_game(&game);
     }
 
-
-//    init_game(&game);
     draw_board(game.board);
     int moved = 0;
 
@@ -419,12 +415,32 @@ int main(void) {
         /* ####### BUTTON ###### */
         sw3 = ((GPIO_ReadValue(0) >> 4) & 0x01);
 
-        if (sw3 != 0) {
+        // On button release
+        if (sw3 != 0 && sw3_pressed == 1) {
             sw3_pressed = 0;
+            // On quick press - save the game
+            if (getTicks() - sw3_pressed_time <= 500) {
+            	for(int i = 0; i < 4; ++i) {
+            		for(int j = 0; j < 4; ++j) {
+            			saved_game_data[i*4+j] = game.board[i][j];
+					}
+				}
+				saved_game_data[16] = 0b10101010;
+				len = eeprom_write(saved_game_data, 0, E_WRITE_LEN);
+				if (len != E_WRITE_LEN) {
+					printf("EEPROM: Failed to write data\r\n");
+					return 1;
+				}
+            }
+            // On long press - reset the game
+            else if (getTicks() - sw3_pressed_time > 500) {
+            	restart_game(&game);
+            }
         }
+        // On button click
         if (sw3 == 0 && sw3_pressed == 0) {
             sw3_pressed = 1;
-            restart_game(&game);
+            sw3_pressed_time = getTicks();
         }
         /* ###################### */
 
