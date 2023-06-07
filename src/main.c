@@ -79,35 +79,30 @@ static void init_ssp(void) {
 
 }
 
-static int joystick_game_move(uint8_t joyState, struct Game *game) {
+static char joystick_read_move(uint8_t joyState) {
     static int wait = 0;
-    int moved = 0;
 
     if ((joyState & JOYSTICK_CENTER) != 0) {
-        oled_clearScreen(OLED_COLOR_BLACK);
-        return moved;
+        return 0;
     }
 
     if (wait++ < 3)
-        return moved;
+        return 0;
 
     wait = 0;
     if ((joyState & JOYSTICK_UP) != 0) {
-        moved = move_up(game);
+        return 'u';
     }
     if ((joyState & JOYSTICK_DOWN) != 0) {
-        moved = move_down(game);
+        return 'd';
     }
     if ((joyState & JOYSTICK_LEFT) != 0) {
-        moved = move_left(game);
+        return 'l';
     }
     if ((joyState & JOYSTICK_RIGHT) != 0) {
-        moved = move_right(game);
+        return 'r';
     }
-    if (moved == 1) {
-    	spawn_number(game);
-    }
-    return moved;
+    return 0;
 }
 
 // ##########################################
@@ -279,8 +274,19 @@ static bool update7seg() {
 	return 0;
 }
 
-static void make_game_move(int board[ROWS][COLS]) {
-	draw_board(board);
+static void make_game_move(struct Game* game, char move) {
+	if (move == 'l') {
+		move_left(game);
+	} else if (move == 'r') {
+		move_right(game);
+	} else if (move == 'u') {
+		move_up(game);
+	} else if (move == 'd') {
+		move_down(game);
+	}
+	spawn_number(game);
+
+	draw_board(game->board);
 	playSound(moveSound);
 	flag_led = 1;
 
@@ -398,9 +404,9 @@ int main(void) {
         if (moved == 0) {
             // When user moved joystick
             if (joystickState != 0) {
-                moved = joystick_game_move(joystickState, &game);
-                if (moved == 1) {
-                	make_game_move(game.board);
+                moved = joystick_read_move(joystickState);
+                if (moved != 0) {
+                	make_game_move(&game, moved);
                 }
             }
         }
@@ -463,32 +469,28 @@ int main(void) {
         if ((x + xoff > 30 && x + xoff < 66) && acc_moved == false) {
         	if (move_left(&game) == 1) {
         		acc_moved = true;
-        		spawn_number(&game);
-        		make_game_move(game.board);
+        		make_game_move(&game, 'l');
         	}
         }
         // RIGHT
         if ((x + xoff < 220 && x + xoff > 191) && acc_moved == false) {
         	if (move_right(&game) == 1) {
         		acc_moved = true;
-        		spawn_number(&game);
-        		make_game_move(game.board);
+        		make_game_move(&game, 'r');
         	}
 		}
         // UP
         if ((y + yoff > 195 && y + yoff < 225) && acc_moved == false) {
         	if (move_up(&game) == 1) {
         		acc_moved = true;
-        		spawn_number(&game);
-        		make_game_move(game.board);
+        		make_game_move(&game, 'u');
         	}
 		}
         // DOWN
         if ((y + yoff > 30 && y + yoff < 66) && acc_moved == false) {
         	if (move_down(&game) == 1) {
         		acc_moved = true;
-        		spawn_number(&game);
-        		make_game_move(game.board);
+        		make_game_move(&game, 'd');
         	}
         }
         /* ############################# */
