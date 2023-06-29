@@ -16,6 +16,7 @@ void draw_empty_board();
 
 void draw_board(int board[ROWS][COLS]);
 
+// TE WARTOSCI SA WYKORZYSTYWANE W game_oled_controller.c!
 static int zero[5][3] = {
         {1, 1, 1},
         {1, 0, 1},
